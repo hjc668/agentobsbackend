@@ -1,0 +1,16 @@
+.idea/
+.vscode/
+.DS_Store
+.claude/
+.workbuddy-ai/
+.audit/
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+frontend/*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+frontend_back/node_modules/
+frontend_back/dist/
+backend/target/
+frontend.zip

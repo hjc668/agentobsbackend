@@ -1,0 +1,36 @@
+app:
+  trace:
+    # Set from the actual ClickHouse column types, not the server's timezone.
+    locator-source-time-zone: ${LOCATOR_SOURCE_TIME_ZONE:UTC}
+    observation-column-time-zone: ${OBSERVATION_COLUMN_TIME_ZONE:UTC}
+  datasource:
+    clickhouse:
+      driver-class-name: com.clickhouse.jdbc.ClickHouseDriver
+      url: jdbc:clickhouse://127.0.0.1:8123/default?compress=0&max_final_threads=1
+      username: clickhouse
+      password: clickhouse
+      hikari:
+        maximum-pool-size: 8
+        minimum-idle: 1
+        connection-timeout: 5000
+        connection-test-query: SELECT 1
+        validation-timeout: 3000
+        idle-timeout: 60000
+        max-lifetime: 300000
+        keepalive-time: 30000
+        pool-name: langfuse-clickhouse
+    polardbx:
+      driver-class-name: com.alibaba.polardbx.core.jdbc.Driver
+      url: jdbc:mysql://127.0.0.1:8527/langfuse_web?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&connectTimeout=5000&socketTimeout=30000
+      username: polardbx_root
+      password: 123456
+      hikari:
+        maximum-pool-size: 8
+        minimum-idle: 1
+        connection-timeout: 5000
+        validation-timeout: 3000
+        idle-timeout: 60000
+        max-lifetime: 300000
+        keepalive-time: 30000
+        connection-test-query: SELECT 1
+        pool-name: HikariPool(Mysql)

@@ -1,0 +1,129 @@
+spring:
+  application:
+    name: langfuse-web-service
+  profiles:
+    # IDEA 和部署脚本使用同一套本地数据库配置。
+    default: mybatis
+
+server:
+  port: ${SERVER_PORT:8080}
+  # 该文根由应用自身管理，网关必须原样转发。
+  forward-headers-strategy: ${SERVER_FORWARD_HEADERS_STRATEGY:framework}
+  servlet:
+    context-path: /icbc/hmp/agentobs
+    session:
+      timeout: ${SERVER_SESSION_TIMEOUT:30m}
+      cookie:
+        path: /icbc/hmp/agentobs
+        http-only: true
+        secure: ${SERVER_SESSION_COOKIE_SECURE:false}
+        same-site: ${SERVER_SESSION_COOKIE_SAME_SITE:Lax}
+  tomcat:
+    threads:
+      max: ${SERVER_MAX_THREADS:100}
+      min-spare: ${SERVER_MIN_SPARE_THREADS:10}
+    accept-count: ${SERVER_ACCEPT_COUNT:100}
+    connection-timeout: ${SERVER_CONNECTION_TIMEOUT:10s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      # 健康检查分为两组，用途不同，不可混用：
+      #
+      #   liveness  —— 只探进程存活，供 F5 / SLB 轮询。
+      #   readiness —— 额外探测两个数据源，供监控告警。
+      #
+      # 负载均衡必须使用 liveness。ClickHouse 与 PolarDB-X 为全部实例共享，
+      # 把 db 放进负载均衡检查会让数据库的一次抖动同时摘除所有节点，
+      # 把局部故障放大成全站不可用（本项目已出现过 PolarDB-X 瞬时失败后
+      # 健康检查转 DOWN、重启进程即恢复的案例）。
+      group:
+        liveness:
+          include: ping
+        readiness:
+          include: db,ping
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
+  workspace:
+    # PolarDB-X CRUD 使用该内部 workspace 值。
+    # 禁止从 HTTP Header 或浏览器路由中接收此值。
+    project-id: aiops-default
+  auth:
+    # 唯一的认证模式开关。
+    #   mock -> 通过 POST /api/v1/auth/login 进行本地开发登录（当前配置）
+    #   aam  -> 行内 Hermes 统一认证
+    #           (/api/aam/login + /aam/login/auth)
+    #
+    # 行内部署时：将此处设置为 aam，并填写本文件底部的 `aam:` 配置块。
+    # 无需修改其他内容，不需要额外环境变量、Spring profile 或启动脚本配置。
+    #
+    # 这是唯一的运行时开关：如果配置无法识别，角色解析器和登录接口将不会创建，应用会启动失败，
+    # 从而避免部署环境静默回退到 mock 登录。
+    mode: mock
+    # 仅供 mock 模式使用。aam 模式下角色来自 langfuse_user_roles 表，
+    # 因为配置文件白名单不便于运维团队审计。
+    admin-users: admin,38971135
+    # 登录后的 Session 有效期，应与行内规范保持一致。
+    session-timeout: 30m
+    # Hermes（@EnableAam）提供的 Portal 接口，仅在 aam 模式下使用；
+    # 如果行内注册路径不同，需要相应调整。
+    portal:
+      # 未认证浏览器发起统一认证时跳转的地址。
+      login-url: /api/aam/login
+      # Portal 退出地址。调用 POST /api/v1/auth/logout 后，前端必须整页跳转到此地址，
+      # 由 Portal 清理自身的 SSO Cookie。XHR 无法完成该操作；如果跳过，
+      # 用户会在下一次加载页面时被直接重新登录。
+      logout-url: /api/aam/logout
+    mock:
+      default-display-name: AAM User
+      default-department: AIOps
+
+# ---------------------------------------------------------------------------------------
+# 行内 AAM（Hermes SSIC）配置，仅在 app.auth.mode=aam 时读取。
+#
+# >>> 请在行内环境填写以下配置。<<<
+# 必须向行内 AAM 团队申请本应用自己的 AAM 客户端凭据，不得复制其他项目的凭据。
+#
+# 以下配置有意保留为空。app.auth.mode=mock 时会忽略这些值，应用可以正常启动；
+# app.auth.mode=aam 时，AamConfigurationValidator 会阻止应用启动，并准确列出仍为空的配置项，
+# 避免等到首次登录时才由 Hermes 返回难以理解的密钥错误。
+#
+# 安全提示：pri_key_passwd 是真实敏感信息。填写后的部署配置不得提交到版本控制系统。
+# 根据行内部署约定，AAM 配置值只保存在 application.yml 中。
+# ---------------------------------------------------------------------------------------
+aam:
+  enableSSIC: "true"
+  enableSpecialUrl: "false"
+  ssic:
+    server:
+      ip: ""
+      version: ""
+      publickey: ""
+    client:
+      # 必须指向前端 AAM 回调页面，例如：
+      #   https://<deployment-host>/<context-path>/aamlogin
+      # Portal 将 SSIAuth/SSISign 返回到该页面，再由页面 POST 到 /aam/login/auth。
+      # 此处不得指向后端接口。
+      site_url: ""
+      key_name: ""
+      pri_key_passwd: ""
+    return_url_key: ""
+  service:
+    pub:
+      key: ""
+    system:
+      label: ""
+    web:
+      # 使用 String 类型，避免丢失前导零。
+      num: ""
+
+dsf:
+  cocoa:
+    router:
+      addr: ""

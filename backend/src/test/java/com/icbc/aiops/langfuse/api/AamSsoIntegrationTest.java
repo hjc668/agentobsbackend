@@ -3,6 +3,7 @@ package com.icbc.aiops.langfuse.api;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -126,8 +127,8 @@ class AamSsoIntegrationTest {
                 .andExpect(jsonPath("$.code").value("AAM_AUTH_FAILED"))
                 .andExpect(jsonPath("$.message").value("AAM authentication failed"))
                 .andReturn();
-        org.junit.jupiter.api.Assertions.assertEquals(null,
-                rejected.getRequest().getSession(false), "a rejected ticket must not create a session");
+        assertNull(rejected.getRequest().getSession(false),
+                "a rejected ticket must not create a session");
     }
 
     @Test

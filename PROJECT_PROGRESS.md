@@ -56,12 +56,14 @@
 
 - 三个 Mock CRUD Service（Dashboard、Dashboard Widget、Prompt）已完成线程安全扫描兼容修复：状态集合改为 `CopyOnWriteArrayList`，公开 CRUD 方法继续使用 `synchronized` 保证复合操作原子性，更新按稳定 ID 原位替换；写入的 JSON Map/List 使用递归不可变快照，避免请求对象和返回对象造成深层可变状态逃逸。
 - 已按 2026-09-29 行内 Sonar 截图修复当前工作区可定位的 **15 条主要级别问题**：分页局部变量遮蔽、3 处嵌套三元表达式、AAM 退出 Cookie 的 `HttpOnly`/`Secure` 标志、重复 getter 实现，以及 7 处布尔测试断言写法；Cookie 属性已加入回归断言。截图中的另 2 条 `CodeStatisticUploadUtil.java` 在当前工作区不存在，需在行内确认扫描源或分支。仓库没有可直接运行的行内 Sonar/PMD 配置，因此本机未宣称复扫通过。
+- 已为 2026-09-29 覆盖率截图中可识别、且未标记“白”白名单的类补充或核对配套测试：新增 API/领域值对象、Mapper 行模型、Java 8 集合与不可变 JSON 工具、MyBatis 工厂、AAM 本地安全对象、Mock 查询/Widget 指标、三个 PolarDB-X CRUD Service 的直接单元测试；已有 Controller、SQL Provider、MyBatis 查询和三个 Mock CRUD 的专项测试继续复用。测试中的 Mapper 均为内存代理，**不代表真实 PolarDB-X 联调**。
+- `backend/pom.xml` 已显式声明测试作用域的 `junit-platform-launcher`；`aam` profile 也已登记 `src/test/aam/java`，为 `HermesAamTicketAuthenticator` 和 `UniformTellerInfoClient` 提供调用内网 SDK 前的输入校验测试。由于本机缺少 `com.icbc.hermes:hermes-aam` 与 `com.icbc.aam:encrypt-client` 行内制品，`mvn -o -Paam -DskipTests test` 在依赖解析阶段失败，这两项测试尚未在本机编译或执行，必须在行内仓库环境验证。
 - `backend/` 执行指定定向命令 `mvn -o -q -Dtest=MockCrudServiceThreadSafetyTest,DashboardControllerTest,DashboardWidgetControllerTest,PromptControllerTest test`：**14 个测试，0 failure / 0 error / 0 skipped**；其中新增直接 Service 测试 7 个，覆盖深层隔离、不可变返回、Widget 位置稳定、Prompt 并发版本与 `latest` 唯一性、Dashboard 并发 Clone 名称唯一性。
 - Sonar 修复涉及的定向测试（AAM SSO/配置、Context Path、Tracing/Widget SQL、Mock CRUD、MyBatis 迁移）共 **75 个测试，0 failure / 0 error / 0 skipped**。
-- 完成上述 Sonar 修复后，`backend/` 执行 `mvn -o test`：**165 个测试，0 failure / 0 error / 0 skipped**。本次 Maven 运行使用 Java 17.0.1，并通过 `release 8` 配置限制 Java 8 API；这是 Java 8 目标兼容构建，**不是 JDK 8 运行时验收，也不等同行内 Sonar 复扫**。
+- 完成上述测试补充后，`backend/` 执行 `mvn -o test`：**199 个测试，0 failure / 0 error / 0 skipped**。本次 Maven 运行使用 Java 17.0.1，并通过 `release 8` 配置限制 Java 8 API；这是默认本地构建及 Mock profile 测试，**不是 JDK 8 运行时验收，不代表真实 ClickHouse/PolarDB-X、AAM 或行内环境验收，也不等同行内 Sonar 复扫**。
 - 上述 CRUD 结论仅来自 **Mock profile 本机测试**，不代表真实 PolarDB-X 联调、AAM 集成验收或行内环境验收。
 - `frontend/` 最近一次构建验证仍为 2026-09-22：在 Node 24.16.0 下执行 `NODE_OPTIONS=--openssl-legacy-provider npm run build`，Webpack 4 构建通过。直接 `npm run build` 会因 OpenSSL/MD4 报 `ERR_OSSL_EVP_UNSUPPORTED`；Node 16 按 package.json 是原声明版本。本次未重新构建前端，也未作浏览器逐屏或目标 ClickHouse/PolarDB-X 联调。
-- 未运行 `mvn -Paam ...`：内网 Hermes 依赖和真实认证环境不在本机；也未验收采集网关的 TTFT、metadata、tags、status 映射。
+- 已尝试离线执行 `mvn -o -Paam -DskipTests test`，但本机没有行内 Hermes/Encrypt Client 制品，构建在依赖解析阶段停止；因此未完成 `aam` profile 编译、测试或真实认证验收。采集网关的 TTFT、metadata、tags、status 映射也未验收。
 
 ## 接手顺序与未完成工作
 

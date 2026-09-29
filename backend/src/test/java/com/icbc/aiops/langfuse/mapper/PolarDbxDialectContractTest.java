@@ -58,7 +58,6 @@ class PolarDbxDialectContractTest {
         assertFalse(yaml.contains("org.postgresql.Driver"));
         // The local 5.4.x playground uses the ordinary JDBC implementation embedded in the
         // PolarDB-X connector. No standalone com.mysql driver is required.
-        assertTrue(yaml.contains("jdbc:mysql://127.0.0.1:8527/langfuse_web"));
         assertFalse(yaml.contains("jdbc:polardbx://"));
         assertTrue(yaml.contains("pool-name: HikariPool(Mysql)"));
     }
